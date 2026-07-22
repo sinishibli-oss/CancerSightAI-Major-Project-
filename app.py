@@ -1,8 +1,7 @@
 import json
 import os
 
-# Use legacy Keras compatibility for the TensorFlow 2.13-trained H5 model.
-os.environ.setdefault("TF_USE_LEGACY_KERAS", "1")
+
 import uuid
 from pathlib import Path
 

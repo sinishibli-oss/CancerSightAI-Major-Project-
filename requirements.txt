@@ -1,0 +1,8 @@
+Flask==2.3.3
+gunicorn==21.2.0
+tensorflow==2.16.1
+tf-keras==2.16.0
+numpy==1.26.4
+Pillow==10.4.0
+opencv-python-headless==4.10.0.84
+Werkzeug==2.3.7

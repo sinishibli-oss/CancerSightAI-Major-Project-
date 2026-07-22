@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f6f1ea" />
+  <title>Analysis Result | HistoAI</title>
+  <meta name="description" content="Review the model classification, confidence score, and Grad-CAM visualization." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Instrument+Sans:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  {% set result_name = prediction|default('Unknown', true) %}
+  {% set result_key = result_name|string|lower %}
+  {% set result_state = 'malignant' if ('malignant' in result_key or 'cancer' in result_key) else ('benign' if 'benign' in result_key else 'neutral') %}
+  {% set raw_confidence = confidence|default(0, true)|float %}
+  {% set confidence_value = [[raw_confidence, 0]|max, 100]|min %}
+
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="page-grain" aria-hidden="true"></div>
+  <div class="page-glow page-glow--left" aria-hidden="true"></div>
+  <div class="page-glow page-glow--right" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="Return to HistoAI upload page">
+        <span class="brand-mark" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <circle cx="14" cy="14" r="12" stroke="currentColor" stroke-width="1.4" />
+            <circle cx="14" cy="14" r="5" fill="currentColor" opacity="0.14" />
+            <circle cx="14" cy="14" r="2.4" fill="currentColor" />
+            <path d="M14 2.5v4M14 21.5v4M2.5 14h4M21.5 14h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+          </svg>
+        </span>
+        <span class="brand-copy">
+          <strong>HistoAI</strong>
+          <span>Histopathology image analysis</span>
+        </span>
+      </a>
+
+      <a class="header-action" href="{{ url_for('index') }}">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M13 8H3M7 4 3 8l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        New analysis
+      </a>
+    </div>
+  </header>
+
+  <main class="page-shell result-shell" id="main-content">
+    <section class="result-heading">
+      <div>
+        <p class="result-step">Analysis complete</p>
+        <h1>Model review</h1>
+        <p>Compare the source image with its activation map and review the model output below.</p>
+      </div>
+      <div class="completion-mark" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
+          <circle cx="13" cy="13" r="11" stroke="currentColor" stroke-width="1.5" />
+          <path d="m8 13.2 3.2 3.1L18 9.7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+    </section>
+
+    <section class="result-summary" aria-labelledby="classification-title">
+      <div class="verdict-card verdict-card--large {{ result_state }}">
+        <div class="verdict-copy">
+          <p class="verdict-label" id="classification-title">Predicted classification</p>
+          <p class="verdict-class">{{ result_name }}</p>
+        </div>
+        <div class="verdict-status" aria-label="Prediction status: {{ result_name }}">
+          <span aria-hidden="true"></span>
+          Model output
+        </div>
+      </div>
+
+      <div class="confidence-section confidence-section--large">
+        <div class="conf-header">
+          <div>
+            <p class="conf-label">Prediction confidence</p>
+            <p class="confidence-context">Estimated probability for the selected class</p>
+          </div>
+          <span class="conf-value">{{ '%.1f'|format(confidence_value) }}%</span>
+        </div>
+        <div
+          class="conf-bar-track"
+          role="progressbar"
+          aria-label="Prediction confidence"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          aria-valuenow="{{ '%.1f'|format(confidence_value) }}"
+        >
+          <div class="conf-bar-fill {{ 'high' if confidence_value >= 85 else ('medium' if confidence_value >= 60 else 'low') }}" style="--confidence: {{ [confidence_value, 100]|min }}%"></div>
+        </div>
+        <div class="conf-scale" aria-hidden="true"><span>0%</span><span>50%</span><span>100%</span></div>
+      </div>
+    </section>
+
+    <section class="comparison-section" aria-labelledby="comparison-title">
+      <div class="section-heading">
+        <div>
+          <span class="panel-num">Visual review</span>
+          <h2 id="comparison-title">Source and explainability map</h2>
+        </div>
+        <p>Warm regions in the Grad-CAM image indicate areas that contributed more strongly to the prediction.</p>
+      </div>
+
+      <div class="image-comparison">
+        <article class="image-panel">
+          <div class="image-panel-header">
+            <div>
+              <span>01</span>
+              <h3>Uploaded image</h3>
+            </div>
+            <span class="image-type">Source</span>
+          </div>
+          <div class="result-image-frame">
+            {% if uploaded_image %}
+              <img src="{{ url_for('static', filename=uploaded_image) }}" alt="Uploaded histopathology tissue image" />
+            {% else %}
+              <div class="image-unavailable">Uploaded image unavailable</div>
+            {% endif %}
+          </div>
+          <p class="image-caption">The original tissue image provided for model inference.</p>
+        </article>
+
+        <article class="image-panel image-panel--gradcam">
+          <div class="image-panel-header">
+            <div>
+              <span>02</span>
+              <h3>Grad-CAM visualization</h3>
+            </div>
+            <span class="image-type image-type--accent">Explainability</span>
+          </div>
+          <div class="result-image-frame">
+            {% if gradcam_image %}
+              <img src="{{ url_for('static', filename=gradcam_image) }}" alt="Grad-CAM activation map for the predicted class" />
+              <div class="heatmap-overlay" aria-hidden="true"></div>
+            {% else %}
+              <div class="image-unavailable">Grad-CAM image unavailable</div>
+            {% endif %}
+          </div>
+          <div class="heat-legend" aria-label="Grad-CAM intensity scale from lower attention to higher attention">
+            <span>Lower attention</span>
+            <span class="legend-gradient" aria-hidden="true"></span>
+            <span>Higher attention</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="interpretation-note" aria-labelledby="interpretation-title">
+      <div class="note-icon" aria-hidden="true">
+        <svg width="23" height="23" viewBox="0 0 23 23" fill="none">
+          <circle cx="11.5" cy="11.5" r="9.5" stroke="currentColor" stroke-width="1.4" />
+          <path d="M11.5 10.5v6M11.5 6.7v.4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div>
+        <h2 id="interpretation-title">Interpret with care</h2>
+        <p>Confidence describes model certainty, not clinical certainty. Grad-CAM shows model attention rather than confirmed pathology. This output is intended for academic demonstration and must not replace review by a qualified medical professional.</p>
+      </div>
+    </section>
+
+    <div class="result-actions">
+      <a class="predict-btn result-primary-action" href="{{ url_for('index') }}">
+        Analyze another image
+        <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
+          <path d="M3 8.5h11M10 4.5l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </a>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <p><strong>Research-use interface.</strong> This academic demonstration is not a clinical diagnostic tool and should not guide patient care.</p>
+  </footer>
+</body>
+</html>

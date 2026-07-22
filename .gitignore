@@ -1,0 +1,9 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+static/uploads/*
+static/gradcam/*
+!static/uploads/.gitkeep
+!static/gradcam/.gitkeep

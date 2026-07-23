@@ -1,11 +1,33 @@
 (function () {
   "use strict";
 
-  const MAX_FILE_SIZE = 10 * 1024 * 1024;
-  const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png", "image/tiff", "image/webp"]);
-  const ACCEPTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp"];
+  const menuToggle = document.getElementById("menuToggle");
+  const siteNav = document.getElementById("siteNav");
+
+  if (menuToggle && siteNav) {
+    menuToggle.addEventListener("click", function () {
+      const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
+      menuToggle.setAttribute("aria-expanded", String(!isOpen));
+      siteNav.classList.toggle("is-open", !isOpen);
+    });
+
+    siteNav.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        menuToggle.setAttribute("aria-expanded", "false");
+        siteNav.classList.remove("is-open");
+      });
+    });
+  }
 
   const uploadForm = document.getElementById("uploadForm");
+  if (!uploadForm) {
+    return;
+  }
+
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+  const ACCEPTED_TYPES = new Set(["image/jpeg", "image/png"]);
+  const ACCEPTED_EXTENSIONS = [".jpg", ".jpeg", ".png"];
+
   const fileInput = document.getElementById("fileInput");
   const dropzone = document.getElementById("dropzone");
   const dzIdle = document.getElementById("dzIdle");
@@ -82,7 +104,7 @@
 
     if (!selectedFile) {
       event.preventDefault();
-      showError("Choose a histopathology image before running the analysis.");
+      showError("Upload a histopathology image before starting the analysis.");
       dropzone.focus();
       return;
     }
@@ -132,7 +154,7 @@
     });
 
     if (!ACCEPTED_TYPES.has(file.type) && !hasAcceptedExtension) {
-      return "Choose a JPEG, PNG, TIFF, or WEBP image.";
+      return "Choose a PNG, JPG, or JPEG histopathology image.";
     }
 
     if (file.size === 0) {
@@ -183,21 +205,14 @@
     if (bytes < 1024) {
       return bytes + " B";
     }
-
     if (bytes < 1024 * 1024) {
       return (bytes / 1024).toFixed(1) + " KB";
     }
-
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   }
 
   function humanizeType(file) {
-    if (file.type) {
-      return file.type.replace("image/", "").toUpperCase();
-    }
-
-    const extension = file.name.split(".").pop();
-    return extension ? extension.toUpperCase() : "Image";
+    return file.type ? file.type.replace("image/", "").toUpperCase() : "Image";
   }
 
   function releasePreviewUrl() {
